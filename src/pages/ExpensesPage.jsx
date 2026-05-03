@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { formatCurrency, formatDate, ORGANIZERS } from '../lib/constants';
 import { Plus, Trash2, Edit3, X, Save, Search, Receipt, ChevronDown, ChevronUp, Check, Circle } from 'lucide-react';
 
-export default function ExpensesPage() {
+export default function ExpensesPage({ isEmbedded }) {
   const { expenses, loading, createExpense, updateExpense, deleteExpense, toggleSettled } = useExpenses();
   const { members } = useMembers();
   const { addToast } = useToast();
@@ -49,15 +49,29 @@ export default function ExpensesPage() {
 
   return (
     <div className="animate-in">
-      <div className="page-header flex justify-between items-center">
-        <div>
-          <h1>Expenses</h1>
-          <p>Track one-off costs split among members</p>
+      {!isEmbedded && (
+        <div className="page-header flex justify-between items-center">
+          <div>
+            <h1>Expenses</h1>
+            <p>Track one-off costs split among members</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+            <Plus size={16} /> New Expense
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-          <Plus size={16} /> New Expense
-        </button>
-      </div>
+      )}
+      
+      {isEmbedded && (
+        <div className="flex justify-between items-center mb-md">
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Expenses</h2>
+            <p className="text-sm text-muted">Track one-off costs split among members</p>
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>
+            <Plus size={14} /> New Expense
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="stat-grid">

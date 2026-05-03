@@ -4,28 +4,32 @@ import { ORGANIZERS, formatCurrency, formatDate, formatTime } from '../lib/const
 import { useToast } from '../contexts/ToastContext';
 import { ChevronDown, ChevronUp, Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
-export default function LedgerPage() {
+export default function LedgerPage({ isEmbedded }) {
   const { addToast } = useToast();
   const [events, setEvents] = useState([]);
   const [attendees, setAttendees] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedAdmin, setExpandedAdmin] = useState(null);
 
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
-      const [evRes, attRes, expRes] = await Promise.all([
+      const [evRes, attRes, expRes, transRes] = await Promise.all([
         supabase.from('events').select('*').order('date', { ascending: false }),
         supabase.from('attendees').select('*, events:event_id(date, venue, time)'),
         supabase.from('expenses').select('*').order('date', { ascending: false }),
+        supabase.from('transfers').select('*').order('date', { ascending: false }),
       ]);
       if (evRes.error) addToast(evRes.error.message, 'error');
       if (attRes.error) addToast(attRes.error.message, 'error');
       if (expRes.error) addToast(expRes.error.message, 'error');
+      if (transRes.error) addToast(transRes.error.message, 'error');
       setEvents(evRes.data || []);
       setAttendees(attRes.data || []);
       setExpenses(expRes.data || []);
+      setTransfers(transRes.data || []);
       setLoading(false);
     };
     fetchAll();
@@ -69,8 +73,25 @@ export default function LedgerPage() {
         });
         byEvent[eventId].total += att.amount_paid || 0;
       }
-      const receivedGroups = Object.values(byEvent).sort((a, b) => b.date.localeCompare(a.date));
-      result[admin].received = receivedGroups;
+      // Transfers IN (Received)
+      const transferReceivedItems = transfers
+        .filter((t) => t.to_admin === admin)
+        .map((t) => ({
+          name: `Transfer from ${t.from_admin}`,
+          amount: t.amount,
+          isMember: false,
+        }));
+      if (transferReceivedItems.length > 0) {
+        receivedGroups.push({
+          type: 'received',
+          label: 'Admin Transfers (In)',
+          date: '9999-12-31', // force to top
+          items: transferReceivedItems,
+          total: transferReceivedItems.reduce((s, i) => s + i.amount, 0),
+        });
+      }
+
+      result[admin].received = receivedGroups.sort((a, b) => b.date.localeCompare(a.date));
       result[admin].totalReceived = receivedGroups.reduce((s, g) => s + g.total, 0);
 
       // --- Costs PAID (court/shuttle costs where paid_by = admin) ---
@@ -106,13 +127,24 @@ export default function LedgerPage() {
         }
       }
 
+      for (const t of transfers) {
+        if (t.from_admin === admin && t.amount > 0) {
+          paidItems.push({
+            label: `Transfer to ${t.to_admin}`,
+            date: t.date,
+            amount: t.amount,
+            detail: t.notes ? `Settlement: ${t.notes}` : 'Settlement',
+          });
+        }
+      }
+
       paidItems.sort((a, b) => b.date.localeCompare(a.date));
       result[admin].paid = paidItems;
       result[admin].totalPaid = paidItems.reduce((s, i) => s + i.amount, 0);
     }
 
     return result;
-  }, [attendees, events, expenses]);
+  }, [attendees, events, expenses, transfers]);
 
   if (loading) {
     return (
@@ -124,11 +156,20 @@ export default function LedgerPage() {
   }
 
   return (
-    <div className="animate-in">
-      <div className="page-header">
-        <h1>Admin Ledger</h1>
-        <p>Track who paid what and who received what</p>
-      </div>
+    <div className={!isEmbedded ? "animate-in" : ""}>
+      {!isEmbedded && (
+        <div className="page-header">
+          <h1>Admin Ledger</h1>
+          <p>Track who paid what and who received what</p>
+        </div>
+      )}
+
+      {isEmbedded && (
+        <div className="mb-md">
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Ledger</h2>
+          <p className="text-sm text-muted">Track who paid what and who received what</p>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="stat-grid">

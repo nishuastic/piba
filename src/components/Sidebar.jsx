@@ -10,9 +10,8 @@ export default function Sidebar() {
 
   const links = [
     { to: '/', label: 'Events', icon: <Calendar size={18} /> },
-    { to: '/expenses', label: 'Expenses', icon: <Receipt size={18} /> },
     { to: '/members', label: 'Members', icon: <Users size={18} /> },
-    { to: '/ledger', label: 'Admin Ledger', icon: <Wallet size={18} /> },
+    { to: '/admin', label: 'Admin', icon: <Wallet size={18} /> },
   ];
 
   const handleSignOut = async () => {

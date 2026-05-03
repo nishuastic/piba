@@ -7,8 +7,7 @@ import LoginPage from './pages/LoginPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import MembersPage from './pages/MembersPage';
-import ExpensesPage from './pages/ExpensesPage';
-import LedgerPage from './pages/LedgerPage';
+import AdminPage from './pages/AdminPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -42,9 +41,8 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<EventsPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
-          <Route path="/expenses" element={<ExpensesPage />} />
           <Route path="/members" element={<MembersPage />} />
-          <Route path="/ledger" element={<LedgerPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
