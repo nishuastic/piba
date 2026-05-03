@@ -2,7 +2,7 @@
 
 export const ORGANIZERS = ['Nischay', 'Vijay', 'Kelvin', 'Jon'];
 
-export const PAYMENT_METHODS = ['Meetup', ...ORGANIZERS];
+export const PAYMENT_METHODS = [...ORGANIZERS];
 
 export const VENUES = ['Racing Club', 'UCPA Rosa Parks'];
 

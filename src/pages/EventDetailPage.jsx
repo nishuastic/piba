@@ -5,18 +5,22 @@ import { useAttendees } from '../hooks/useAttendees';
 import { useMembers } from '../hooks/useMembers';
 import { useToast } from '../contexts/ToastContext';
 import { PAYMENT_METHODS, VENUES, ORGANIZERS, formatCurrency, formatDate, formatTime } from '../lib/constants';
-import { ArrowLeft, Plus, Trash2, Edit3, X, UserPlus, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit3, X, UserPlus, Save, ArrowRightLeft } from 'lucide-react';
+import { useEventTransfers } from '../hooks/useEventTransfers';
 
 export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { attendees, loading: attLoading, addAttendee, updateAttendee, deleteAttendee } = useAttendees(id);
+  const { transfers: settlements, addTransfer: addSettlement, deleteTransfer: deleteSettlement } = useEventTransfers(id);
   const { members } = useMembers();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddAttendee, setShowAddAttendee] = useState(false);
+  const [editingAttendee, setEditingAttendee] = useState(null);
+  const [showSettlement, setShowSettlement] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
 
@@ -45,8 +49,13 @@ export default function EventDetailPage() {
         .filter((a) => a.payment_method === m)
         .reduce((sum, a) => sum + (a.amount_paid || 0), 0);
     });
+    // Apply settlements: money moves from sender to receiver
+    settlements.forEach((s) => {
+      if (s.from_admin in byMethod) byMethod[s.from_admin] -= s.amount;
+      if (s.to_admin in byMethod) byMethod[s.to_admin] += s.amount;
+    });
     return { totalCost, totalIncome, balance: totalIncome - totalCost, byMethod };
-  }, [attendees, event]);
+  }, [attendees, event, settlements]);
 
   const handleSaveEvent = async () => {
     try {
@@ -231,6 +240,59 @@ export default function EventDetailPage() {
         </div>
       </div>
 
+      {/* Settlements */}
+      <div className="detail-section">
+        <div className="flex justify-between items-center mb-md">
+          <div className="detail-section-title">
+            <ArrowRightLeft size={16} /> Settlements ({settlements.length})
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowSettlement(true)}>
+            <Plus size={14} /> Settle Up
+          </button>
+        </div>
+
+        {settlements.length === 0 ? (
+          <p className="text-muted text-sm">No settlements recorded for this event.</p>
+        ) : (
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>From</th>
+                  <th></th>
+                  <th>To</th>
+                  <th>Amount</th>
+                  <th>Notes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {settlements.map((s) => (
+                  <tr key={s.id}>
+                    <td className="font-semibold" style={{ color: 'var(--danger)' }}>{s.from_admin}</td>
+                    <td className="text-muted"><ArrowRightLeft size={12} /></td>
+                    <td className="font-semibold" style={{ color: 'var(--success)' }}>{s.to_admin}</td>
+                    <td className="font-bold">{formatCurrency(s.amount)}</td>
+                    <td className="text-muted text-sm">{s.notes || '—'}</td>
+                    <td>
+                      <button
+                        className="btn btn-ghost btn-icon"
+                        onClick={() => {
+                          if (window.confirm(`Delete settlement of ${formatCurrency(s.amount)} from ${s.from_admin} to ${s.to_admin}?`)) deleteSettlement(s.id);
+                        }}
+                        aria-label="Delete settlement"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Attendees */}
       <div className="detail-section">
         <div className="flex justify-between items-center mb-md">
@@ -274,15 +336,24 @@ export default function EventDetailPage() {
                     <td>{formatCurrency(a.amount_paid)}</td>
                     <td className="text-secondary">{a.payment_method}</td>
                     <td>
-                      <button
-                        className="btn btn-ghost btn-icon"
-                        onClick={() => {
-                          if (window.confirm(`Remove ${a.name}?`)) deleteAttendee(a.id);
-                        }}
-                        aria-label={`Remove ${a.name}`}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex gap-sm">
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          onClick={() => setEditingAttendee(a)}
+                          aria-label={`Edit ${a.name}`}
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          onClick={() => {
+                            if (window.confirm(`Remove ${a.name}?`)) deleteAttendee(a.id);
+                          }}
+                          aria-label={`Remove ${a.name}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -315,6 +386,307 @@ export default function EventDetailPage() {
           }}
         />
       )}
+
+      {showSettlement && (
+        <EventSettlementModal
+          event={event}
+          summary={summary}
+          onClose={() => setShowSettlement(false)}
+          onSave={async (data) => {
+            try {
+              await addSettlement(data);
+              addToast('Settlement recorded!', 'success');
+              setShowSettlement(false);
+            } catch (err) {
+              addToast(err.message, 'error');
+            }
+          }}
+        />
+      )}
+
+      {editingAttendee && (
+        <EditAttendeeModal
+          attendee={editingAttendee}
+          event={event}
+          members={members}
+          onClose={() => setEditingAttendee(null)}
+          onSave={async (data) => {
+            try {
+              await updateAttendee(editingAttendee.id, data);
+              addToast(`${data.name} updated!`, 'success');
+              setEditingAttendee(null);
+            } catch (err) {
+              addToast(err.message, 'error');
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EventSettlementModal({ event, summary, onClose, onSave }) {
+  const [form, setForm] = useState(() => {
+    // Pre-select "from" as whoever collected the most money
+    const topCollector = ORGANIZERS.reduce((best, name) =>
+      (summary.byMethod[name] || 0) > (summary.byMethod[best] || 0) ? name : best
+    , ORGANIZERS[0]);
+    const defaultTo = ORGANIZERS.find((n) => n !== topCollector) || ORGANIZERS[0];
+    return {
+      from_admin: topCollector,
+      to_admin: defaultTo,
+      amount: '',
+      date: event.date,
+      notes: '',
+    };
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = (key, val) => setForm((p) => ({ ...p, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (form.from_admin === form.to_admin) {
+      alert('Sender and receiver cannot be the same person.');
+      return;
+    }
+    setSubmitting(true);
+    await onSave({
+      from_admin: form.from_admin,
+      to_admin: form.to_admin,
+      amount: Number(form.amount) || 0,
+      date: form.date,
+      notes: form.notes,
+    });
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">Record Settlement</h2>
+          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="settle-from">From</label>
+              <select
+                id="settle-from"
+                className="form-input"
+                value={form.from_admin}
+                onChange={(e) => handleChange('from_admin', e.target.value)}
+              >
+                {ORGANIZERS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}{summary.byMethod[n] ? ` (${formatCurrency(summary.byMethod[n])})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center justify-center pt-lg text-muted">
+              <ArrowRightLeft size={16} />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="settle-to">To</label>
+              <select
+                id="settle-to"
+                className="form-input"
+                value={form.to_admin}
+                onChange={(e) => handleChange('to_admin', e.target.value)}
+              >
+                {ORGANIZERS.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row mt-md">
+            <div className="form-group">
+              <label className="form-label" htmlFor="settle-amount">Amount (€)</label>
+              <input
+                id="settle-amount"
+                className="form-input"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={(e) => handleChange('amount', e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="settle-date">Date</label>
+              <input
+                id="settle-date"
+                className="form-input"
+                type="date"
+                value={form.date}
+                onChange={(e) => handleChange('date', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group mt-md">
+            <label className="form-label" htmlFor="settle-notes">Notes</label>
+            <input
+              id="settle-notes"
+              className="form-input"
+              type="text"
+              placeholder="e.g. Transferring collected cash"
+              value={form.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+            />
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Record Settlement'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditAttendeeModal({ attendee, event, members, onClose, onSave }) {
+  const [name, setName] = useState(attendee.name);
+  const [isMember, setIsMember] = useState(attendee.is_member);
+  const [paymentMethod, setPaymentMethod] = useState(attendee.payment_method || PAYMENT_METHODS[0]);
+  const [amountPaid, setAmountPaid] = useState(String(attendee.amount_paid ?? ''));
+  const [submitting, setSubmitting] = useState(false);
+  const [foundMember, setFoundMember] = useState(
+    members.find((m) => m.name.toLowerCase() === attendee.name.toLowerCase()) || null
+  );
+
+  const handleNameChange = (val) => {
+    setName(val);
+    const found = members.find((m) => m.name.toLowerCase() === val.toLowerCase());
+    setFoundMember(found || null);
+    if (found) setIsMember(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    await onSave({
+      name,
+      is_member: isMember,
+      payment_method: paymentMethod,
+      amount_paid: Number(amountPaid) || 0,
+    });
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">Edit Player</h2>
+          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="edit-attendee-name">Name</label>
+            <input
+              id="edit-attendee-name"
+              className="form-input"
+              type="text"
+              placeholder="Player name"
+              value={name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              list="edit-member-suggestions"
+              required
+            />
+            {foundMember && (
+              <div className="text-xs mt-sm" style={{ color: 'var(--success)', fontWeight: 500 }}>
+                ✓ Found in members list!
+                {(() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  if (foundMember.membership_start && foundMember.membership_end) {
+                    if (today > foundMember.membership_end) return <span style={{ color: 'var(--danger)', marginLeft: 6 }}>(Membership Expired)</span>;
+                    return <span style={{ opacity: 0.8, marginLeft: 6 }}>(Active)</span>;
+                  }
+                  return '';
+                })()}
+              </div>
+            )}
+            <datalist id="edit-member-suggestions">
+              {members.map((m) => (
+                <option key={m.id} value={m.name} />
+              ))}
+            </datalist>
+          </div>
+
+          <div className="form-group mt-md">
+            <label className="form-label">Status</label>
+            <div className="flex gap-sm">
+              <button
+                type="button"
+                className={`btn btn-sm ${isMember ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setIsMember(true)}
+              >
+                Member
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${!isMember ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setIsMember(false)}
+              >
+                Non-Member
+              </button>
+            </div>
+          </div>
+
+          <div className="form-row mt-md">
+            <div className="form-group">
+              <label className="form-label" htmlFor="edit-attendee-amount">Amount Paid (€)</label>
+              <input
+                id="edit-attendee-amount"
+                className="form-input"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={amountPaid}
+                onChange={(e) => setAmountPaid(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="edit-attendee-method">Paid To</label>
+              <select
+                id="edit-attendee-method"
+                className="form-input"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -322,7 +694,7 @@ export default function EventDetailPage() {
 function AddAttendeeModal({ event, members, onClose, onAdd }) {
   const [name, setName] = useState('');
   const [isMember, setIsMember] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]);
+  const [paymentMethod, setPaymentMethod] = useState('Jon');
   const [amountPaid, setAmountPaid] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [foundMember, setFoundMember] = useState(null);

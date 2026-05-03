@@ -73,7 +73,12 @@ export default function TransfersPage({ isEmbedded }) {
                   <td className="font-semibold" style={{ color: 'var(--danger)' }}>{t.from_admin}</td>
                   <td className="font-semibold" style={{ color: 'var(--success)' }}>{t.to_admin}</td>
                   <td className="font-bold">{formatCurrency(t.amount)}</td>
-                  <td className="text-muted text-sm">{t.notes || '—'}</td>
+                  <td className="text-muted text-sm">
+                    {t.notes || '—'}
+                    {t.event_id && (
+                      <span className="badge badge-member" style={{ marginLeft: 6, fontSize: '0.65rem' }}>Event</span>
+                    )}
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <button className="btn btn-ghost btn-icon" onClick={() => handleDelete(t)} aria-label="Delete">
                       <Trash2 size={14} />

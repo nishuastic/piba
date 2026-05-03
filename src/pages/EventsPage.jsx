@@ -11,14 +11,49 @@ export default function EventsPage() {
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [duplicating, setDuplicating] = useState(null);
-  const [tab, setTab] = useState('upcoming');
-
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  const upcoming = events.filter((e) => new Date(e.date) >= now);
+  // upcoming: ascending (nearest first); past: descending (most recent first, already from hook)
+  const upcoming = [...events.filter((e) => new Date(e.date) >= now)].reverse();
   const past = events.filter((e) => new Date(e.date) < now);
-  const displayed = tab === 'upcoming' ? upcoming : past;
+
+  const renderEventCard = (event) => (
+    <div
+      key={event.id}
+      className="card event-card"
+      onClick={() => navigate(`/events/${event.id}`)}
+    >
+      <div className="event-card-date">
+        <Clock size={14} />
+        {formatDate(event.date)}
+        {event.time && ` · ${formatTime(event.time)}`}
+      </div>
+      <div className="event-card-venue">
+        <MapPin size={16} style={{ display: 'inline', marginRight: 6, opacity: 0.6 }} />
+        {event.venue}
+      </div>
+      <div className="event-card-stats">
+        <span className="event-card-stat">
+          <Users size={14} />
+          {event.attendees?.[0]?.count ?? 0} players
+        </span>
+        <span className="event-card-stat">
+          Courts: {formatCurrency(event.court_cost)}
+        </span>
+        <span className="event-card-stat">
+          Shuttles: {formatCurrency(event.shuttle_cost)}
+        </span>
+      </div>
+      <button
+        className="btn btn-secondary btn-sm event-card-duplicate"
+        onClick={(e) => { e.stopPropagation(); setDuplicating(event); }}
+        title="Duplicate this event"
+      >
+        <Copy size={12} /> Duplicate
+      </button>
+    </div>
+  );
 
   return (
     <div className="animate-in">
@@ -33,77 +68,48 @@ export default function EventsPage() {
         </button>
       </div>
 
-      <div className="tab-pills">
-        <button
-          className={`tab-pill ${tab === 'upcoming' ? 'active' : ''}`}
-          onClick={() => setTab('upcoming')}
-        >
-          Upcoming ({upcoming.length})
-        </button>
-        <button
-          className={`tab-pill ${tab === 'past' ? 'active' : ''}`}
-          onClick={() => setTab('past')}
-        >
-          Past ({past.length})
-        </button>
-      </div>
-
       {loading ? (
         <div className="empty-state">
           <div className="empty-state-icon">⏳</div>
           <div className="empty-state-title">Loading events...</div>
         </div>
-      ) : displayed.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">📅</div>
-          <div className="empty-state-title">
-            {tab === 'upcoming' ? 'No upcoming events' : 'No past events yet'}
-          </div>
-          <p className="text-muted text-sm">
-            {tab === 'upcoming'
-              ? 'Create your first event to get started!'
-              : 'Your completed events will appear here.'}
-          </p>
-        </div>
       ) : (
-        <div className="events-grid">
-          {displayed.map((event) => (
-            <div
-              key={event.id}
-              className="card event-card"
-              onClick={() => navigate(`/events/${event.id}`)}
-            >
-              <div className="event-card-date">
-                <Clock size={14} />
-                {formatDate(event.date)}
-                {event.time && ` · ${formatTime(event.time)}`}
-              </div>
-              <div className="event-card-venue">
-                <MapPin size={16} style={{ display: 'inline', marginRight: 6, opacity: 0.6 }} />
-                {event.venue}
-              </div>
-              <div className="event-card-stats">
-                <span className="event-card-stat">
-                  <Users size={14} />
-                  {event.attendees?.[0]?.count ?? 0} players
-                </span>
-                <span className="event-card-stat">
-                  Courts: {formatCurrency(event.court_cost)}
-                </span>
-                <span className="event-card-stat">
-                  Shuttles: {formatCurrency(event.shuttle_cost)}
-                </span>
-              </div>
-              <button
-                className="btn btn-secondary btn-sm event-card-duplicate"
-                onClick={(e) => { e.stopPropagation(); setDuplicating(event); }}
-                title="Duplicate this event"
-              >
-                <Copy size={12} /> Duplicate
-              </button>
+        <>
+          {/* Upcoming */}
+          {upcoming.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">📅</div>
+              <div className="empty-state-title">No upcoming events</div>
+              <p className="text-muted text-sm">Create your first event to get started!</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="events-grid">
+              {upcoming.map(renderEventCard)}
+            </div>
+          )}
+
+          {/* Past events */}
+          {past.length > 0 && (
+            <>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                margin: '28px 0 16px',
+                color: 'var(--text-muted)',
+              }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                <span className="text-xs" style={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                  Past Events ({past.length})
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
+              <div className="events-grid" style={{ opacity: 0.75 }}>
+                {past.map(renderEventCard)}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       {showCreate && (

@@ -186,7 +186,7 @@ const agentTools = {
       const price = args.amount_paid ?? (args.is_member ? event.member_price : event.non_member_price) ?? 0;
       const { error } = await supabase.from('attendees').insert([{
         event_id: event.id, name: args.name, is_member: args.is_member ?? false,
-        payment_method: args.payment_method || 'Meetup', amount_paid: price,
+        payment_method: args.payment_method || 'Jon', amount_paid: price,
       }]).select().single();
       if (error) return capture('add_attendee', { error: error.message });
       return capture('add_attendee', { success: true, message: `${args.name} added to ${args.event_date} event` });

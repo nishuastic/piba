@@ -2,6 +2,7 @@ import { useState } from 'react';
 import LedgerPage from './LedgerPage';
 import ExpensesPage from './ExpensesPage';
 import TransfersPage from './TransfersPage';
+import VenuePLPage from './VenuePLPage';
 
 export default function AdminPage() {
   const [tab, setTab] = useState('ledger');
@@ -26,11 +27,17 @@ export default function AdminPage() {
         >
           Expenses
         </button>
-        <button 
-          className={`btn btn-sm ${tab === 'transfers' ? 'btn-primary' : 'btn-ghost'}`} 
+        <button
+          className={`btn btn-sm ${tab === 'transfers' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setTab('transfers')}
         >
           Transfers
+        </button>
+        <button
+          className={`btn btn-sm ${tab === 'venue' ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => setTab('venue')}
+        >
+          Venue P&amp;L
         </button>
       </div>
 
@@ -38,6 +45,7 @@ export default function AdminPage() {
         {tab === 'ledger' && <LedgerPage isEmbedded />}
         {tab === 'expenses' && <ExpensesPage isEmbedded />}
         {tab === 'transfers' && <TransfersPage isEmbedded />}
+        {tab === 'venue' && <VenuePLPage isEmbedded />}
       </div>
     </div>
   );
