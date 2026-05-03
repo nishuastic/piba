@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAttendees } from '../hooks/useAttendees';
 import { useMembers } from '../hooks/useMembers';
 import { useToast } from '../contexts/ToastContext';
-import { PAYMENT_METHODS, VENUES, formatCurrency, formatDate, formatTime } from '../lib/constants';
+import { PAYMENT_METHODS, VENUES, ORGANIZERS, formatCurrency, formatDate, formatTime } from '../lib/constants';
 import { ArrowLeft, Plus, Trash2, Edit3, X, UserPlus, Save } from 'lucide-react';
 
 export default function EventDetailPage() {
@@ -58,6 +58,8 @@ export default function EventDetailPage() {
           venue: editForm.venue,
           court_cost: Number(editForm.court_cost) || 0,
           shuttle_cost: Number(editForm.shuttle_cost) || 0,
+          court_cost_paid_by: editForm.court_cost_paid_by || '',
+          shuttle_cost_paid_by: editForm.shuttle_cost_paid_by || '',
           member_price: Number(editForm.member_price) || 0,
           non_member_price: Number(editForm.non_member_price) || 0,
           notes: editForm.notes || '',
@@ -144,8 +146,24 @@ export default function EventDetailPage() {
               <input className="form-input" type="number" step="0.01" value={editForm.court_cost || ''} onChange={(e) => setEditForm({ ...editForm, court_cost: e.target.value })} />
             </div>
             <div className="form-group">
+              <label className="form-label">Court Paid By</label>
+              <select className="form-input" value={editForm.court_cost_paid_by || ''} onChange={(e) => setEditForm({ ...editForm, court_cost_paid_by: e.target.value })}>
+                <option value="">Not specified</option>
+                {ORGANIZERS.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-row mt-md">
+            <div className="form-group">
               <label className="form-label">Shuttle Cost (€)</label>
               <input className="form-input" type="number" step="0.01" value={editForm.shuttle_cost || ''} onChange={(e) => setEditForm({ ...editForm, shuttle_cost: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Shuttle Paid By</label>
+              <select className="form-input" value={editForm.shuttle_cost_paid_by || ''} onChange={(e) => setEditForm({ ...editForm, shuttle_cost_paid_by: e.target.value })}>
+                <option value="">Not specified</option>
+                {ORGANIZERS.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
             </div>
           </div>
           <div className="form-row mt-md">
@@ -176,7 +194,7 @@ export default function EventDetailPage() {
           <div className="stat-label">Total Costs</div>
           <div className="stat-value danger">{formatCurrency(summary.totalCost)}</div>
           <div className="text-xs text-muted mt-md">
-            Courts: {formatCurrency(event.court_cost)} · Shuttles: {formatCurrency(event.shuttle_cost)}
+            Courts: {formatCurrency(event.court_cost)}{event.court_cost_paid_by ? ` (${event.court_cost_paid_by})` : ''} · Shuttles: {formatCurrency(event.shuttle_cost)}{event.shuttle_cost_paid_by ? ` (${event.shuttle_cost_paid_by})` : ''}
           </div>
         </div>
         <div className="stat-card">

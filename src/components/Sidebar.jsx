@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Calendar, Users, Receipt, LogOut, Menu, X } from 'lucide-react';
+import { Calendar, Users, Receipt, Wallet, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Sidebar() {
@@ -12,6 +12,7 @@ export default function Sidebar() {
     { to: '/', label: 'Events', icon: <Calendar size={18} /> },
     { to: '/expenses', label: 'Expenses', icon: <Receipt size={18} /> },
     { to: '/members', label: 'Members', icon: <Users size={18} /> },
+    { to: '/ledger', label: 'Admin Ledger', icon: <Wallet size={18} /> },
   ];
 
   const handleSignOut = async () => {
