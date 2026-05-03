@@ -61,13 +61,13 @@ export default function MembersPage() {
   };
 
   const handleRenew = async (member) => {
-    if (!window.confirm(`Renew ${member.name} for Aug 1st, 2026 – Sep 30th, 2026?`)) return;
+    if (!window.confirm(`Renew ${member.name} for Sep 1st, 2026 – Aug 31st, 2027?`)) return;
     try {
       await updateMember(member.id, {
-        membership_start: '2026-08-01',
-        membership_end: '2026-09-30',
+        membership_start: '2026-09-01',
+        membership_end: '2027-08-31',
       });
-      addToast(`${member.name} renewed for Aug–Sep 2026!`, 'success');
+      addToast(`${member.name} renewed for 2026/2027 season!`, 'success');
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -254,7 +254,7 @@ export default function MembersPage() {
                           <button 
                             className="btn btn-secondary btn-sm" 
                             onClick={() => handleRenew(m)} 
-                            title="Renew for Aug-Sep 2026"
+                            title="Renew for Sep 2026 - Aug 2027"
                           >
                             <RefreshCw size={12} /> Renew
                           </button>
