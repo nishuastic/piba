@@ -27,7 +27,12 @@ export default function MembersPage() {
 
   const handleStartEdit = (member) => {
     setEditingId(member.id);
-    setEditForm({ name: member.name, membership_fee_paid: member.membership_fee_paid || 0 });
+    setEditForm({
+      name: member.name,
+      membership_fee_paid: member.membership_fee_paid || 0,
+      membership_start: member.membership_start || '',
+      membership_end: member.membership_end || ''
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -35,6 +40,8 @@ export default function MembersPage() {
       await updateMember(editingId, {
         name: editForm.name,
         membership_fee_paid: Number(editForm.membership_fee_paid) || 0,
+        membership_start: editForm.membership_start || null,
+        membership_end: editForm.membership_end || null,
       });
       setEditingId(null);
       addToast('Member updated!', 'success');
@@ -129,6 +136,7 @@ export default function MembersPage() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Period</th>
                 <th>Membership Fee</th>
                 <th>Expense Share</th>
                 <th>Balance</th>
@@ -140,6 +148,10 @@ export default function MembersPage() {
                 const expData = expenseTotals[m.id];
                 const unsettledExpense = expData?.unsettled || 0;
                 const balance = (m.membership_fee_paid || 0) - unsettledExpense;
+
+                const today = new Date().toISOString().split('T')[0];
+                const isActive = m.membership_start && m.membership_end && today >= m.membership_start && today <= m.membership_end;
+                const isExpired = m.membership_end && today > m.membership_end;
 
                 return (
                   <tr key={m.id}>
@@ -153,6 +165,37 @@ export default function MembersPage() {
                         />
                       ) : (
                         <span className="font-semibold">{m.name}</span>
+                      )}
+                    </td>
+                    <td>
+                      {editingId === m.id ? (
+                        <div className="flex gap-xs">
+                          <input
+                            className="form-input"
+                            type="date"
+                            value={editForm.membership_start}
+                            onChange={(e) => setEditForm({ ...editForm, membership_start: e.target.value })}
+                            style={{ maxWidth: 130 }}
+                          />
+                          <span style={{ paddingTop: 8 }}>-</span>
+                          <input
+                            className="form-input"
+                            type="date"
+                            value={editForm.membership_end}
+                            onChange={(e) => setEditForm({ ...editForm, membership_end: e.target.value })}
+                            style={{ maxWidth: 130 }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-xs">
+                          <span className="text-secondary text-sm">
+                            {m.membership_start ? new Date(m.membership_start).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—'}
+                            {' - '}
+                            {m.membership_end ? new Date(m.membership_end).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—'}
+                          </span>
+                          {isActive && <span className="badge badge-settled" style={{ width: 'fit-content', fontSize: '0.65rem', padding: '2px 6px' }}>Active</span>}
+                          {isExpired && <span className="badge badge-unsettled" style={{ width: 'fit-content', fontSize: '0.65rem', padding: '2px 6px' }}>Expired</span>}
+                        </div>
                       )}
                     </td>
                     <td>
@@ -250,12 +293,32 @@ export default function MembersPage() {
 function AddMemberModal({ onClose, onAdd }) {
   const [name, setName] = useState('');
   const [fee, setFee] = useState('');
+  
+  // Default to Sep 1st of current/next year to Aug 31st of following year
+  const defaultStart = (() => {
+    const now = new Date();
+    const year = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+    return `${year}-09-01`;
+  })();
+  const defaultEnd = (() => {
+    const now = new Date();
+    const year = now.getMonth() >= 8 ? now.getFullYear() + 1 : now.getFullYear();
+    return `${year}-08-31`;
+  })();
+
+  const [start, setStart] = useState(defaultStart);
+  const [end, setEnd] = useState(defaultEnd);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    await onAdd({ name, membership_fee_paid: Number(fee) || 0 });
+    await onAdd({ 
+      name, 
+      membership_fee_paid: Number(fee) || 0, 
+      membership_start: start || null,
+      membership_end: end || null
+    });
     setSubmitting(false);
   };
 
@@ -281,18 +344,38 @@ function AddMemberModal({ onClose, onAdd }) {
               required
             />
           </div>
-          <div className="form-group mt-md">
-            <label className="form-label" htmlFor="new-member-fee">Membership Fee Paid (€)</label>
-            <input
-              id="new-member-fee"
-              className="form-input"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={fee}
-              onChange={(e) => setFee(e.target.value)}
-            />
+          <div className="form-row mt-md">
+            <div className="form-group">
+              <label className="form-label" htmlFor="new-member-fee">Membership Fee Paid (€)</label>
+              <input
+                id="new-member-fee"
+                className="form-input"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ flex: 2 }}>
+              <label className="form-label">Period</label>
+              <div className="flex gap-xs">
+                <input
+                  className="form-input"
+                  type="date"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                />
+                <span style={{ paddingTop: 8 }}>-</span>
+                <input
+                  className="form-input"
+                  type="date"
+                  value={end}
+                  onChange={(e) => setEnd(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>

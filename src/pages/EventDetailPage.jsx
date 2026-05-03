@@ -325,6 +325,7 @@ function AddAttendeeModal({ event, members, onClose, onAdd }) {
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]);
   const [amountPaid, setAmountPaid] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [foundMember, setFoundMember] = useState(null);
 
   // Auto-fill price based on membership status
   useEffect(() => {
@@ -339,6 +340,7 @@ function AddAttendeeModal({ event, members, onClose, onAdd }) {
   const handleNameChange = (val) => {
     setName(val);
     const found = members.find((m) => m.name.toLowerCase() === val.toLowerCase());
+    setFoundMember(found || null);
     if (found) setIsMember(true);
   };
 
@@ -353,6 +355,7 @@ function AddAttendeeModal({ event, members, onClose, onAdd }) {
     });
     setName('');
     setAmountPaid('');
+    setFoundMember(null);
     setSubmitting(false);
   };
 
@@ -378,6 +381,19 @@ function AddAttendeeModal({ event, members, onClose, onAdd }) {
               list="member-suggestions"
               required
             />
+            {foundMember && (
+              <div className="text-xs mt-sm" style={{ color: 'var(--success)', fontWeight: 500 }}>
+                ✓ Found in members list!
+                {(() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  if (foundMember.membership_start && foundMember.membership_end) {
+                    if (today > foundMember.membership_end) return <span style={{ color: 'var(--danger)', marginLeft: 6 }}>(Membership Expired)</span>;
+                    return <span style={{ opacity: 0.8, marginLeft: 6 }}>(Active)</span>;
+                  }
+                  return '';
+                })()}
+              </div>
+            )}
             <datalist id="member-suggestions">
               {members.map((m) => (
                 <option key={m.id} value={m.name} />
