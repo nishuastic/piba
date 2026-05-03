@@ -44,8 +44,10 @@ export default function LedgerPage() {
       };
 
       // --- Payments RECEIVED (attendee payments where payment_method = admin) ---
-      // Group by event
-      const adminAttendees = attendees.filter((a) => a.payment_method === admin);
+      // Meetup payments go to Jon since the Meetup account is his
+      const adminAttendees = attendees.filter((a) =>
+        a.payment_method === admin || (admin === 'Jon' && a.payment_method === 'Meetup')
+      );
       const byEvent = {};
       for (const att of adminAttendees) {
         const eventId = att.event_id;
