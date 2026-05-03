@@ -42,8 +42,8 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-logo">
           <div className="login-logo-icon">🏸</div>
-          <div className="login-logo-text">Shuttle Club</div>
-          <div className="login-subtitle">Badminton Club Manager</div>
+          <div className="login-logo-text">PIBA</div>
+          <div className="login-subtitle">Paris International Badminton Association</div>
         </div>
 
         {error && <div className="login-error">{error}</div>}

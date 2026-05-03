@@ -1,5 +1,5 @@
 -- =============================================
--- SHUTTLE CLUB — Membership Period Extension
+-- PIBA — Membership Period Extension
 -- =============================================
 -- Adds start/end date fields for membership validity
 

@@ -1,5 +1,5 @@
 -- =============================================
--- SHUTTLE CLUB — Admin Transfers Schema
+-- PIBA — Admin Transfers Schema
 -- =============================================
 -- Tracks money sent between organizers to settle balances
 

@@ -8,7 +8,7 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hey! I\'m Shuttle 🏸 — your club assistant. I can:\n\n• **Create events** — "Create event tomorrow at Racing Club"\n• **Add members** — "Add member Jean-Pierre, paid 30€"\n• **Add players** — "Add Marie to today\'s event, paid to Vijay"\n• **List data** — "Show events" or "List members"\n• **Upload files** — CSV, PDF, or images\n\nWhat would you like to do?',
+      content: 'Hey! I\'m the PIBA Assistant 🏸 — here to help manage the club. I can:\n\n• **Create events** — "Create event tomorrow at Racing Club"\n• **Add members** — "Add member Jean-Pierre, paid 30€"\n• **Add players** — "Add Marie to today\'s event, paid to Vijay"\n• **List data** — "Show events" or "List members"\n• **Upload files** — CSV, PDF, or images\n\nWhat would you like to do?',
     },
   ]);
   const [history, setHistory] = useState([]);
@@ -138,7 +138,7 @@ export default function ChatWidget() {
           <div className="chat-panel-header">
             <div className="flex items-center gap-sm">
               <Bot size={18} />
-              <span className="font-semibold">Shuttle Assistant</span>
+              <span className="font-semibold">PIBA Assistant</span>
             </div>
             <button className="btn btn-ghost btn-icon" onClick={() => setOpen(false)} aria-label="Minimize">
               <ChevronDown size={18} />

@@ -14,11 +14,11 @@ const MODELS = [
 
 const openrouter = createOpenRouter({
   apiKey: OPENROUTER_API_KEY || 'missing-key',
-  appName: 'Shuttle Club',
+  appName: 'PIBA',
   appUrl: typeof window !== 'undefined' ? window.location.origin : '',
 });
 
-const SYSTEM_PROMPT = `You are Shuttle, a helpful assistant for the Shuttle Club badminton club manager app.
+const SYSTEM_PROMPT = `You are the PIBA Assistant, a helpful assistant for PIBA (Paris International Badminton Association) club manager app.
 You can help users manage events and members by calling the tools provided.
 
 IMPORTANT RULES:

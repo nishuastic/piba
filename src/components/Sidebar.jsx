@@ -28,7 +28,7 @@ export default function Sidebar() {
       <div className="mobile-header">
         <div className="flex items-center gap-sm">
           <span style={{ fontSize: '1.3rem' }}>🏸</span>
-          <span className="font-bold">Shuttle Club</span>
+          <span className="font-bold">PIBA</span>
         </div>
         <button
           className="btn btn-ghost btn-icon"
@@ -43,7 +43,7 @@ export default function Sidebar() {
       <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">🏸</div>
-          <span className="sidebar-logo-text">Shuttle Club</span>
+          <span className="sidebar-logo-text">PIBA</span>
         </div>
 
         <nav className="sidebar-nav">

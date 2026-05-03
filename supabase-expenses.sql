@@ -1,5 +1,5 @@
 -- =============================================
--- SHUTTLE CLUB — Expenses Schema Extension
+-- PIBA — Expenses Schema Extension
 -- =============================================
 -- Run this in the Supabase SQL Editor AFTER the main schema
 

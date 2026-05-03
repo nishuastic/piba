@@ -1,5 +1,5 @@
 -- =============================================
--- SHUTTLE CLUB — Event Cost Payer Extension
+-- PIBA — Event Cost Payer Extension
 -- =============================================
 -- Run this in the Supabase SQL Editor to add "paid by" tracking for event costs
 
