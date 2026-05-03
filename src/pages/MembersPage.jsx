@@ -3,7 +3,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMemberExpenseTotals } from '../hooks/useExpenses';
 import { useToast } from '../contexts/ToastContext';
 import { formatCurrency } from '../lib/constants';
-import { Plus, Trash2, Edit3, Upload, X, Save, Search } from 'lucide-react';
+import { Plus, Trash2, Edit3, Upload, X, Save, Search, RefreshCw } from 'lucide-react';
 
 export default function MembersPage() {
   const { members, loading, addMember, updateMember, deleteMember, bulkAddMembers } = useMembers();
@@ -55,6 +55,19 @@ export default function MembersPage() {
     try {
       await deleteMember(member.id);
       addToast(`${member.name} removed`, 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
+  };
+
+  const handleRenew = async (member) => {
+    if (!window.confirm(`Renew ${member.name} for Aug 1st, 2026 – Sep 30th, 2026?`)) return;
+    try {
+      await updateMember(member.id, {
+        membership_start: '2026-08-01',
+        membership_end: '2026-09-30',
+      });
+      addToast(`${member.name} renewed for Aug–Sep 2026!`, 'success');
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -238,6 +251,13 @@ export default function MembersPage() {
                         </div>
                       ) : (
                         <div className="flex gap-sm" style={{ justifyContent: 'flex-end' }}>
+                          <button 
+                            className="btn btn-secondary btn-sm" 
+                            onClick={() => handleRenew(m)} 
+                            title="Renew for Aug-Sep 2026"
+                          >
+                            <RefreshCw size={12} /> Renew
+                          </button>
                           <button className="btn btn-ghost btn-icon" onClick={() => handleStartEdit(m)} aria-label={`Edit ${m.name}`}>
                             <Edit3 size={14} />
                           </button>
