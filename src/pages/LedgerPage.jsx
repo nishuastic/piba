@@ -74,6 +74,8 @@ export default function LedgerPage({ isEmbedded }) {
         byEvent[eventId].total += att.amount_paid || 0;
       }
       // Transfers IN (Received)
+      const receivedGroups = Object.values(byEvent);
+      
       const transferReceivedItems = transfers
         .filter((t) => t.to_admin === admin)
         .map((t) => ({
